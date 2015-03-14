@@ -54,7 +54,7 @@ public class PerformanceBenchmark {
     performanceBenchmark.client.setConnectionPool(new ConnectionPool(100, TimeUnit.SECONDS.toMillis(5)));
 
     System.out.println("Warm up run...");
-    performanceBenchmark.testPerformance(10 * 1000);
+    performanceBenchmark.testPerformance(100 * 1000);
 
     System.out.println();
     System.out.println("Actual Test run...");
