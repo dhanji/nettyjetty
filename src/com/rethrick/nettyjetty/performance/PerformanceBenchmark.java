@@ -35,15 +35,15 @@ public class PerformanceBenchmark {
   private final String url;
   private final Callable<RequestStats> task = new Callable<RequestStats>() {
     @Override public RequestStats call() {
-      Stopwatch stopwatch = Stopwatch.createStarted();
+      long start = System.currentTimeMillis();
       try {
-        return new RequestStats(stopwatch.elapsed(TimeUnit.MILLISECONDS), client.newCall(new Request.Builder()
+        return new RequestStats(System.currentTimeMillis() - start, client.newCall(new Request.Builder()
             .url(url)
             .build())
             .execute()
             .code(), false);
       } catch (IOException e) {
-        return new RequestStats(stopwatch.elapsed(TimeUnit.MILLISECONDS), 0, true);
+        return new RequestStats(System.currentTimeMillis() - start, 0, true);
       }
     }
   };
@@ -84,25 +84,27 @@ public class PerformanceBenchmark {
     futures = null; // Attempt to flush from memory fwiw.
     System.gc();
 
+    long durationSec = TimeUnit.MILLISECONDS.toSeconds(sumTimeTaken);
+    int totalRequests = allStats.size();
     System.out.println("Total requests attempted : " + runs);
-    System.out.println("Total requests performed : " + allStats.size());
-    System.out.println("Total requests time      : " + (sumTimeTaken / 1000) + "s");
+    System.out.println("Total requests performed : " + totalRequests);
+    System.out.println("Total requests time      : " + durationSec + "s");
     System.out.println("Total server errors      : " + serverErrors);
     System.out.println("Total io errors          : " + ioErrors);
 
-    System.out.println("Server error rate      : " + Humanize.formatPercent(serverErrors / runs));
-    System.out.println("IO error rate          : " + Humanize.formatPercent(ioErrors / runs));
+    System.out.println("Server error rate      : " + Humanize.formatPercent(serverErrors / runs * 1.0));
+    System.out.println("IO error rate          : " + Humanize.formatPercent(ioErrors / runs * 1.0));
 
     System.out.println();
-    System.out.println("Avg request time         : " + (sumTimeTaken / 1000 / allStats.size()) + "s");
-    System.out.println("Avg requests/sec         : " + ((allStats.size() - ioErrors - serverErrors) / sumTimeTaken / 1000));
-    System.out.println("Avg errors/sec           : " + ((ioErrors + serverErrors) / sumTimeTaken / 1000));
+    System.out.println("Avg request time         : " + (durationSec / totalRequests) + "s");
+    System.out.println("Avg requests/sec         : " + ((totalRequests - ioErrors - serverErrors * 1.0) / durationSec));
+    System.out.println("Avg errors/sec           : " + ((ioErrors + serverErrors * 1.0) / durationSec));
 
     Collections.sort(allStats);
-    RequestStats median = allStats.get(allStats.size() / 2);
+    RequestStats median = allStats.get(totalRequests / 2);
 
     System.out.println();
-    System.out.println("Median request time      : " + Humanize.duration(median.timeTakenMillis / 1000));
+    System.out.println("Median request time      : " + (median.timeTakenMillis / 1000));
   }
 
   public static class RequestStats implements Comparable<RequestStats> {
