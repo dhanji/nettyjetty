@@ -82,7 +82,7 @@ public class PerformanceBenchmark {
       serverErrors += stats.status > 399 ? 1 : 0;
       allStats.add(stats);
     }
-    wallClockSec = System.currentTimeMillis() - wallClockSec;
+    wallClockSec = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - wallClockSec);
 
     futures = null; // Attempt to flush from memory fwiw.
     System.gc();
