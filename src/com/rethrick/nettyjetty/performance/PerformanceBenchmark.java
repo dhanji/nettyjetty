@@ -102,7 +102,8 @@ public class PerformanceBenchmark {
     System.out.println();
     System.out.println("Avg request time         : " + (durationSec / totalRequests) + "s");
     System.out.println("Avg request wall time    : " + (wallClockSec / totalRequests) + "s");
-    System.out.println("Avg requests/sec (wall)  : " + ((totalRequests - ioErrors - serverErrors * 1.0) / wallClockSec));
+    System.out.println("Avg requests/sec (wall)  : " + ((totalRequests * 1.0) / wallClockSec));
+    System.out.println("Avg success/sec (wall)   : " + ((totalRequests - ioErrors - serverErrors * 1.0) / wallClockSec));
     System.out.println("Avg errors/sec   (wall)  : " + ((ioErrors + serverErrors * 1.0) / wallClockSec));
 
     Collections.sort(allStats);
