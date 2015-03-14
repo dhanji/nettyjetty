@@ -67,6 +67,7 @@ public class PerformanceBenchmark {
   public void testPerformance(int runs) throws ExecutionException, InterruptedException {
     // Hammer Jetty as fast as we can.
     List<Future<RequestStats>> futures = new ArrayList<Future<RequestStats>>(runs);
+    long wallClockSec = System.currentTimeMillis();
     for (int i = 0; i < runs; i++) {
       futures.add(pool.submit(task));
     }
@@ -81,6 +82,8 @@ public class PerformanceBenchmark {
       serverErrors += stats.status > 399 ? 1 : 0;
       allStats.add(stats);
     }
+    wallClockSec = System.currentTimeMillis() - wallClockSec;
+
     futures = null; // Attempt to flush from memory fwiw.
     System.gc();
 
@@ -88,6 +91,7 @@ public class PerformanceBenchmark {
     int totalRequests = allStats.size();
     System.out.println("Total requests attempted : " + runs);
     System.out.println("Total requests performed : " + totalRequests);
+    System.out.println("Total wall time          : " + wallClockSec + "s");
     System.out.println("Total requests time      : " + durationSec + "s");
     System.out.println("Total server errors      : " + serverErrors);
     System.out.println("Total io errors          : " + ioErrors);
@@ -97,8 +101,9 @@ public class PerformanceBenchmark {
 
     System.out.println();
     System.out.println("Avg request time         : " + (durationSec / totalRequests) + "s");
-    System.out.println("Avg requests/sec         : " + ((totalRequests - ioErrors - serverErrors * 1.0) / durationSec));
-    System.out.println("Avg errors/sec           : " + ((ioErrors + serverErrors * 1.0) / durationSec));
+    System.out.println("Avg request wall time    : " + (wallClockSec / totalRequests) + "s");
+    System.out.println("Avg requests/sec (wall)  : " + ((totalRequests - ioErrors - serverErrors * 1.0) / wallClockSec));
+    System.out.println("Avg errors/sec   (wall)  : " + ((ioErrors + serverErrors * 1.0) / wallClockSec));
 
     Collections.sort(allStats);
     RequestStats median = allStats.get(totalRequests / 2);
