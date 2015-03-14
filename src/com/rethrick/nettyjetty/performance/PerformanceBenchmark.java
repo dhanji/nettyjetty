@@ -47,7 +47,7 @@ public class PerformanceBenchmark {
             .execute()
             .code(), null);
       } catch (IOException e) {
-        return new RequestStats(System.currentTimeMillis() - start, 0, getClass().getName() + " - " + e.getMessage());
+        return new RequestStats(System.currentTimeMillis() - start, 0, e.getClass().getName() + " - " + e.getMessage());
       }
     }
   };
