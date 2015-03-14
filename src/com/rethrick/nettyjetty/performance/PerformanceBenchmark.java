@@ -76,7 +76,7 @@ public class PerformanceBenchmark {
       futures.add(pool.submit(task));
     }
 
-    Map<String, AtomicInteger> errors = new HashMap<String, AtomicInteger>();
+    Map<String, Integer> errors = new HashMap<String, Integer>();
     List<RequestStats> allStats = new ArrayList<RequestStats>();
     long sumTimeTaken = 0, ioErrors = 0, serverErrors = 0;
     for (Future<RequestStats> future : futures) {
@@ -85,7 +85,7 @@ public class PerformanceBenchmark {
       sumTimeTaken += stats.timeTakenMillis;
       if (stats.ioerror != null) {
         ioErrors++;
-        errors.getOrDefault(stats.ioerror, new AtomicInteger()).incrementAndGet();
+        errors.put(stats.ioerror, errors.getOrDefault(stats.ioerror, 0) + 1);
       }
       serverErrors += stats.status > 399 ? 1 : 0;
       allStats.add(stats);
@@ -122,7 +122,7 @@ public class PerformanceBenchmark {
 
     System.out.println();
     System.out.println("Error breakdown:");
-    for (Map.Entry<String, AtomicInteger> error : errors.entrySet()) {
+    for (Map.Entry<String, Integer> error : errors.entrySet()) {
       System.out.println(error.getKey() + " : " + error.getValue());
     }
     System.out.println();
