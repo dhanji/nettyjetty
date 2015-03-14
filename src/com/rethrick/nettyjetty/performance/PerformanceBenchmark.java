@@ -10,13 +10,17 @@ import humanize.Humanize;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.SimpleTimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author dhanji@gmail.com (Dhanji R. Prasanna)
@@ -41,9 +45,9 @@ public class PerformanceBenchmark {
             .url(url)
             .build())
             .execute()
-            .code(), false);
+            .code(), null);
       } catch (IOException e) {
-        return new RequestStats(System.currentTimeMillis() - start, 0, true);
+        return new RequestStats(System.currentTimeMillis() - start, 0, getClass().getName() + " - " + e.getMessage());
       }
     }
   };
@@ -72,13 +76,17 @@ public class PerformanceBenchmark {
       futures.add(pool.submit(task));
     }
 
+    Map<String, AtomicInteger> errors = new HashMap<String, AtomicInteger>();
     List<RequestStats> allStats = new ArrayList<RequestStats>();
     long sumTimeTaken = 0, ioErrors = 0, serverErrors = 0;
     for (Future<RequestStats> future : futures) {
       RequestStats stats = future.get();
 
       sumTimeTaken += stats.timeTakenMillis;
-      ioErrors += stats.ioerror ? 1 : 0;
+      if (stats.ioerror != null) {
+        ioErrors++;
+        errors.getOrDefault(stats.ioerror, new AtomicInteger()).incrementAndGet();
+      }
       serverErrors += stats.status > 399 ? 1 : 0;
       allStats.add(stats);
     }
@@ -111,14 +119,21 @@ public class PerformanceBenchmark {
 
     System.out.println();
     System.out.println("Median request time      : " + (median.timeTakenMillis / 1000));
+
+    System.out.println();
+    System.out.println("Error breakdown:");
+    for (Map.Entry<String, AtomicInteger> error : errors.entrySet()) {
+      System.out.println(error.getKey() + " : " + error.getValue());
+    }
+    System.out.println();
   }
 
   public static class RequestStats implements Comparable<RequestStats> {
     private final long timeTakenMillis;
     private final int status;
-    private final boolean ioerror;
+    private final String ioerror;
 
-    public RequestStats(long timeTakenMillis, int status, boolean ioerror) {
+    public RequestStats(long timeTakenMillis, int status, String ioerror) {
       this.timeTakenMillis = timeTakenMillis;
       this.status = status;
       this.ioerror = ioerror;
