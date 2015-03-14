@@ -1,5 +1,6 @@
 package com.rethrick.nettyjetty.performance;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.squareup.okhttp.ConnectionPool;
 import com.squareup.okhttp.OkHttpClient;
@@ -27,12 +28,17 @@ public class PerformanceBenchmark {
   private final OkHttpClient client = new OkHttpClient();
   private final ExecutorService pool = Executors.newFixedThreadPool(POOL_SIZE);
 
+  public PerformanceBenchmark(String url) {
+    this.url = url;
+  }
+
+  private final String url;
   private final Callable<RequestStats> task = new Callable<RequestStats>() {
     @Override public RequestStats call() {
       Stopwatch stopwatch = Stopwatch.createStarted();
       try {
         return new RequestStats(stopwatch.elapsed(TimeUnit.MILLISECONDS), client.newCall(new Request.Builder()
-            .url("http://localhost:8080/")
+            .url(url)
             .build())
             .execute()
             .code(), false);
@@ -43,7 +49,8 @@ public class PerformanceBenchmark {
   };
 
   public static void main(String[] args) throws ExecutionException, InterruptedException {
-    PerformanceBenchmark performanceBenchmark = new PerformanceBenchmark();
+    Preconditions.checkArgument(args.length > 0, "Expected URL as first argument");
+    PerformanceBenchmark performanceBenchmark = new PerformanceBenchmark(args[0]);
     performanceBenchmark.client.setConnectionPool(new ConnectionPool(100, TimeUnit.SECONDS.toMillis(5)));
 
     System.out.println("Warm up run...");
